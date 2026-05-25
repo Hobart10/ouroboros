@@ -154,10 +154,11 @@ def generate_vocal_dataset(
     dlocs2 = jnp.arange(0.45, t_axis[-1], 1 / dfreq)  # pressure pulse frequency (Hz)
     dlocs = jnp.sort(jnp.concatenate([dlocs1, dlocs2]))
 
-    key, pKey, kKey, dKey, noiseKey = jr.split(key, 5)
+    
 
     all_audio = []
     for voc_num in range(n_vocs):
+        key, pKey, kKey, dKey, noiseKey = jr.split(key, 5)
         p_amp = jr.uniform(pKey, maxval=0.025, minval=-0.005)
         k_amp = jr.uniform(kKey, maxval=0.03, minval=-0.03)
         d_amps = jr.uniform(dKey, maxval=0.03, minval=-0.005, shape=dA.shape)
