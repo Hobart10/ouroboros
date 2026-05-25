@@ -8,12 +8,6 @@ from matplotlib.animation import FuncAnimation
 # import librosa
 import os
 import matplotlib as mpl
-try:
-    import analysis.analysis as analysis
-except ModuleNotFoundError:
-    # `analysis` is an optional package not bundled in this repo; only
-    # used by the developmental-trajectory plots below, not core training.
-    analysis = None
 import seaborn as sns
 
 plt.rcParams["text.usetex"] = True
