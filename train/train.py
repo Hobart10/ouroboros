@@ -1,5 +1,7 @@
 from torch.utils.tensorboard import SummaryWriter
 import torch
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 import numpy as np
 from tqdm import tqdm
 from utils import sst, sse
@@ -46,10 +48,10 @@ def save_model(
             they're saved with epoch number in the tag
     """
 
-    current_saves = glob.glob(os.path.join("/".join(location.split("/")[:-1]), "*.tar"))
+    current_saves = glob.glob(os.path.join(os.path.dirname(location), "*.tar"))
     if len(current_saves) >= max_saved:
         save_epochs = [
-            int(s.split("/")[-1].split(".tar")[0].split("_")[-1]) for s in current_saves
+            int(os.path.basename(s).split(".tar")[0].split("_")[-1]) for s in current_saves
         ]
         save_order = np.argsort(save_epochs)
         ordered_saves = [current_saves[o] for o in save_order]
@@ -95,7 +97,7 @@ def load_model(
     """
 
     model_files = glob.glob(os.path.join(location, "*.tar"))
-    epochs = [int(m.split("/checkpoint_")[-1].split(".tar")[0]) for m in model_files]
+    epochs = [int(os.path.basename(m).split("checkpoint_")[-1].split(".tar")[0]) for m in model_files]
     most_recent = np.argsort(epochs)[-1]
     location = model_files[most_recent]
     print(f"loading from {location}")
@@ -116,7 +118,7 @@ def load_model(
         # but probably should have saved it. oh well! we set to 1 for compatibility with all my saves.
         kernel = fullPolyModule(
             nTerms=sd["n_kernel"],
-            device="cuda",
+            device=DEVICE,
             x_dim=1,
             z_dim=2,
             activation=lambda x: x,
@@ -210,10 +212,10 @@ def train(
             x, dxdt, dx2dt2 = batch  # each is bsz x seq len x 1
             bsz, _, n = x.shape
 
-            x = x.to("cuda").to(torch.float32)
-            dxdt = dxdt.to("cuda").to(torch.float32)
+            x = x.to(DEVICE).to(torch.float32)
+            dxdt = dxdt.to(DEVICE).to(torch.float32)
             dx2 = (
-                dx2dt2.to("cuda").to(torch.float32) / (dt**2) * model.tau**2
+                dx2dt2.to(DEVICE).to(torch.float32) / (dt**2) * model.tau**2
             )  # rescale dx2, rather than model output
 
             dx2hat, weights = model(x, dxdt, dt, smoothing)  # state: B x L x SD
@@ -325,9 +327,9 @@ def train(
                     x, dxdt, dx2dt2 = batch  # each is bsz x seq len x 1
                     bsz, _, n = x.shape
 
-                    x = x.to("cuda").to(torch.float32)
-                    dxdt = dxdt.to("cuda").to(torch.float32)
-                    dx2 = dx2dt2.to("cuda").to(torch.float32) / (dt**2) * model.tau**2
+                    x = x.to(DEVICE).to(torch.float32)
+                    dxdt = dxdt.to(DEVICE).to(torch.float32)
+                    dx2 = dx2dt2.to(DEVICE).to(torch.float32) / (dt**2) * model.tau**2
 
                     dx2hat, weights = model(x, dxdt, dt, smoothing)
 

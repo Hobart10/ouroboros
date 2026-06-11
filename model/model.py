@@ -8,6 +8,8 @@ from typing import Tuple, Union
 import numpy as np
 from tqdm import tqdm
 
+_DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
 # plt.rcParams['text.usetex'] = True
 import gc
 
@@ -32,13 +34,15 @@ class Ouroboros(nn.Module):
         d_state: int = 16,
         d_conv: int = 4,
         expand_factor: int = 1,
-        device: str = "cuda",
+        device: str = None,
         tau: float = 1 / 10000,
         smooth_len: float = 0.001,
     ):
 
         super().__init__()
 
+        if device is None:
+            device = _DEFAULT_DEVICE
         self.device = device
         ## if stacking on data dimension, d should be 4* d_data (y,dy,rev y, rev dy)
         ## if stacking on time dimension, d should be 2*d_data (y,dy). We are stacking on the time dimension.

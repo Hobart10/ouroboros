@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 from utils import (
     sst,
     sse,
@@ -77,8 +79,8 @@ def integrate_model_d2(
     audio = audio[None, :, None]
     dy = deriv_approx_dy(audio)
 
-    audio = torch.from_numpy(audio).to(torch.float32).to("cuda")
-    dy = torch.from_numpy(dy).to(torch.float32).to("cuda")
+    audio = torch.from_numpy(audio).to(torch.float32).to(DEVICE)
+    dy = torch.from_numpy(dy).to(torch.float32).to(DEVICE)
     ic = torch.hstack([audio[0, 0, 0], dy[0, 0, 0] / dt])
 
     with torch.no_grad():
@@ -160,7 +162,7 @@ def integrate_estimated_d2(
     dy = deriv_approx_dy(audio[None, :, None]).squeeze()
 
     ic = (
-        torch.from_numpy(np.hstack([audio[0], dy[0] / dt])).to(torch.float32).to("cuda")
+        torch.from_numpy(np.hstack([audio[0], dy[0] / dt])).to(torch.float32).to(DEVICE)
     )
     integrated = integrate_second_deriv(
         yhat, ic, t_steps, method=method, verbose=verbose
@@ -204,7 +206,7 @@ def integrate_second_deriv(
             )
 
         t = t.detach().cpu().numpy()
-        dz2 = torch.from_numpy(np.array([deriv_interp(t)])).to("cuda").to(torch.float32)
+        dz2 = torch.from_numpy(np.array([deriv_interp(t)])).to(DEVICE).to(torch.float32)
 
         dz1 = z[1]
 
@@ -258,9 +260,9 @@ def eval_model_error(
         with torch.no_grad():
             x, dxdt, dx2dt2 = batch  # each is bsz x seq len x n neurons + 1
 
-            x = x.to("cuda").to(torch.float32)
-            dxdt = dxdt.to("cuda").to(torch.float32)
-            dx2 = dx2dt2.to("cuda").to(torch.float32) / (dt**2)
+            x = x.to(DEVICE).to(torch.float32)
+            dxdt = dxdt.to(DEVICE).to(torch.float32)
+            dx2 = dx2dt2.to(DEVICE).to(torch.float32) / (dt**2)
             dx2hat, state_pred = model(x, dxdt, dt)  # state: B x L x SD
 
             # change: scaling to "true" d2y
@@ -286,9 +288,9 @@ def eval_model_error(
             x, dxdt, dx2dt2 = batch  # each is bsz x seq len x n neurons + 1
             
 
-            x = x.to("cuda").to(torch.float32)
-            dxdt = dxdt.to("cuda").to(torch.float32)
-            dx2 = dx2dt2.to("cuda").to(torch.float32) / (dt**2)
+            x = x.to(DEVICE).to(torch.float32)
+            dxdt = dxdt.to(DEVICE).to(torch.float32)
+            dx2 = dx2dt2.to(DEVICE).to(torch.float32) / (dt**2)
             dx2hat, state_pred = model(x, dxdt, dt)  # state: B x L x SD
 
             # change: scaling to "true" d2y

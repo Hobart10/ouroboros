@@ -14,6 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
 import seaborn as sns
 
 
@@ -31,6 +33,7 @@ def model_cv_lambdas(
     smooth_len: float = 0.001,
     model_path: str = "",
     save_freq: int = 5,
+    vis_freq: int = 0,
 ) -> torch.nn.Module:
     """
     This function trains models and cross-validates across regularization strengths.
@@ -86,7 +89,7 @@ def model_cv_lambdas(
 
         kernel = fullPolyModule(
             nTerms=n_kernels,
-            device="cuda",
+            device=DEVICE,
             x_dim=1,
             z_dim=2,
             activation=lambda x: x,
@@ -131,7 +134,7 @@ def model_cv_lambdas(
                 val_freq=1,
                 runDir=model_path_full_poly,
                 dt=dt,
-                vis_freq=max(n_epochs // 10, 1),
+                vis_freq=vis_freq,
                 smoothing=False,
                 reg_weights=reg_weights,
                 start_epoch=start_epoch,

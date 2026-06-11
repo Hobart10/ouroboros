@@ -16,29 +16,17 @@ dependencies = [
     "soundfile>=0.13.1",
     "ssqueezepy>=0.6.6",
     "tensorboard>=2.20.0",
-    "torch==2.8.0",
+    "torch==2.8.0+cu126",
     "torchdiffeq>=0.2.5",
     "tqdm>=4.67.1",
     "vocalpy>=0.10.0.post1",
 ]
 
 
-[sources]
-torch = [
-  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
-  { index = "pytorch-cu126", marker = "sys_platform == 'linux'" },
-]
-torchvision = [
-  { index = "pytorch-cpu", marker = "sys_platform != 'linux'" },
-  { index = "pytorch-cu126", marker = "sys_platform == 'linux'" },
-]
-
-[[index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[[index]]
+[[tool.uv.index]]
 name = "pytorch-cu126"
 url = "https://download.pytorch.org/whl/cu126"
 explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu126" }

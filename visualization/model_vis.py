@@ -10,7 +10,7 @@ import os
 import matplotlib as mpl
 import seaborn as sns
 
-plt.rcParams["text.usetex"] = True
+plt.rcParams["text.usetex"] = False
 plt.rcParams["font.size"] = 22
 
 

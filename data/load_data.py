@@ -39,6 +39,7 @@ def get_audio_training(
     """
 
     audio = []
+    sr = None
 
     for a, s in zip(audio_files, seg_files):
         if os.path.isfile(a) and os.path.isfile(s):
@@ -46,6 +47,8 @@ def get_audio_training(
             # all loaded files have the same sample rate
             if aud.dtype == np.int16:  # ints are TOO BIG!! turn into floats
                 aud = aud / -np.iinfo(aud.dtype).min
+            if aud.ndim == 2:  # multi-channel: use first channel only
+                aud = aud[:, 0]
 
             chunk_len = int(round(context_len * sr))
 
@@ -106,6 +109,7 @@ def get_audio_analysis(
     """
 
     audio = []
+    sr = None
 
     for a, s in zip(audio_files, seg_files):
         if os.path.isfile(a) and os.path.isfile(s):
@@ -114,6 +118,8 @@ def get_audio_analysis(
 
             if aud.dtype == np.int16:  # ints are TOO BIG!! turn into floats
                 aud = aud / -np.iinfo(aud.dtype).min
+            if aud.ndim == 2:  # multi-channel: use first channel only
+                aud = aud[:, 0]
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -179,7 +185,7 @@ def get_segmented_audio(
         audio_files = [audio_files[o] for o in order]
         # seg_files = [seg_files[o] for o in order]
 
-    audio_tags = [a.split("/")[-1].split(audio_id)[0] for a in audio_files]
+    audio_tags = [os.path.basename(a).split(audio_id)[0] for a in audio_files]
     seg_files = [os.path.join(seg_path, a + ".txt") for a in audio_tags]
 
     if training:

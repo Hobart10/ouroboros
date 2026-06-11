@@ -22,6 +22,8 @@ def train_model(
     batch_size: int = 32,
     n_epochs: int = 100,
     save_freq: int = 5,
+    audio_id: str = ".wav",
+    vis_freq: int = 0,
 ) -> torch.nn.Module:
     """
     function for training a model. takes audio from
@@ -65,6 +67,7 @@ def train_model(
         audio, sr = get_segmented_audio(
             audio_dir,
             seg_dir,
+            audio_id=audio_id,
             max_vocs=chunks_per_dir,
             context_len=context_len,
             seed=seed,
@@ -99,6 +102,7 @@ def train_model(
         tau=dt,
         model_path=model_dir,
         save_freq=save_freq,
+        vis_freq=vis_freq,
     )
 
     return best_model
