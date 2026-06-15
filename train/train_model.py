@@ -24,6 +24,7 @@ def train_model(
     save_freq: int = 5,
     audio_id: str = ".wav",
     vis_freq: int = 0,
+    val_freq: int = 10,
 ) -> torch.nn.Module:
     """
     function for training a model. takes audio from
@@ -103,6 +104,7 @@ def train_model(
         model_path=model_dir,
         save_freq=save_freq,
         vis_freq=vis_freq,
+        val_freq=val_freq,
     )
 
     return best_model

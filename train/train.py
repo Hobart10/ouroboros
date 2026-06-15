@@ -310,10 +310,10 @@ def train(
             optimizer.step()
             
             train_losses.append(train_loss.item())
-            # we should probably be adding val loss here too...ugh
-            writer.add_scalar("Loss/train", train_loss.item(), idx)
-            if reg_weights:
-                writer.add_scalar("Penalty/train", penalty.item(), idx)
+            if idx % 10 == 0:  # throttle tensorboard disk I/O
+                writer.add_scalar("Loss/train", train_loss.item(), idx)
+                if reg_weights:
+                    writer.add_scalar("Penalty/train", penalty.item(), idx)
 
         if epoch % val_freq == 0:
             model.eval()

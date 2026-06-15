@@ -34,6 +34,7 @@ def model_cv_lambdas(
     model_path: str = "",
     save_freq: int = 5,
     vis_freq: int = 0,
+    val_freq: int = 10,
 ) -> torch.nn.Module:
     """
     This function trains models and cross-validates across regularization strengths.
@@ -131,7 +132,7 @@ def model_cv_lambdas(
                 loaders=dls,
                 scheduler=full_scheduler_poly,
                 nEpochs=n_epochs,
-                val_freq=1,
+                val_freq=val_freq,
                 runDir=model_path_full_poly,
                 dt=dt,
                 vis_freq=vis_freq,
