@@ -89,6 +89,35 @@ def test_pure_tones(
         plt.close()
 
 
-def reconstruct_data(model, sr, audio, method="RK45", remove_dc_offset=True):
+def reconstruct_data(
+    model,
+    sr: int,
+    audio: np.ndarray,
+    method: str = "rk4",
+    remove_dc_offset: bool = True,
+    smoothing: bool = True,
+) -> np.ndarray:
+    """
+    Reconstruct audio from a trained Ouroboros model by integrating the
+    predicted second derivative.
 
-    pass
+    Parameters
+    ----------
+    model  : trained Ouroboros (in eval mode)
+    sr     : sample rate (Hz)
+    audio  : 1-D waveform array (variable length)
+    method : ODE integration method passed to torchdiffeq ('rk4' or 'RK45')
+
+    Returns
+    -------
+    reconstructed : 1-D waveform array of the same length as audio
+    """
+    from train.eval import integrate_model_d2
+
+    dt = 1.0 / sr
+    audio_1d = audio.ravel().astype(float)
+    recon = integrate_model_d2(
+        model, audio_1d, dt,
+        method=method, smoothing=smoothing, verbose=False,
+    )
+    return recon
