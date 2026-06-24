@@ -38,6 +38,7 @@ import argparse
 import os
 import numpy as np
 import matplotlib
+from tqdm import tqdm
 matplotlib.use("Agg")   # non-interactive backend for batch runs
 import matplotlib.pyplot as plt
 
@@ -94,7 +95,8 @@ def parse_args():
     p.add_argument("--export_matlab",action="store_true",
                    help="Export .mat file for MATLAB visualization")
     p.add_argument("--interactive",  action="store_true",
-                   help="Show interactive matplotlib window (requires display)")
+                   help="Show interactive matplotlib window. Requires a display "
+                        "(X11 forwarding or local run). Do not use on headless cluster.")
     return p.parse_args()
 
 
@@ -185,14 +187,20 @@ def main():
     )
     plt.close(fig)
 
-    # interactive window (only if explicitly requested)
+    # interactive window — requires display (X11 / local run only)
     if args.interactive:
-        matplotlib.use("TkAgg")
-        fig = plot_scatter_interactive(
-            embedding, audio_list, sr,
-            durations=durations, **spec_kw,
-        )
-        plt.show()
+        import os
+        if not os.environ.get("DISPLAY") and not os.name == "nt":
+            print("WARNING: --interactive requested but DISPLAY env var is not set. "
+                  "Skipping interactive window. Use X11 forwarding (ssh -X) or run locally.")
+        else:
+            matplotlib.use("TkAgg")
+            import matplotlib.pyplot as _plt2
+            fig_i = plot_scatter_interactive(
+                embedding, audio_list, sr,
+                durations=durations, **spec_kw,
+            )
+            _plt2.show()
 
     # ------------------------------------------------------------------
     # 7. Reconstruction + metrics
@@ -200,7 +208,6 @@ def main():
     if not args.no_recon:
         print("Reconstructing vocalizations...")
         originals, reconstructions = [], []
-        from tqdm import tqdm
         for aud in tqdm(audio_list, desc="Integrating"):
             orig  = aud.squeeze()
             recon = reconstruct_data(model, sr, orig)

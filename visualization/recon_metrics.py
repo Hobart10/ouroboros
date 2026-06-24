@@ -19,12 +19,32 @@ tests can be run directly on them.
 import numpy as np
 import librosa
 import librosa.sequence
+from scipy.ndimage import uniform_filter
 from scipy.stats import wilcoxon, kruskal, pearsonr
-from skimage.metrics import structural_similarity as ssim_fn
 import matplotlib.pyplot as plt
 import seaborn as sns
 from tqdm import tqdm
 from typing import Optional, Tuple, List
+
+
+def _structural_similarity(
+    x: np.ndarray, y: np.ndarray, data_range: float, win_size: int = 11
+) -> float:
+    """SSIM using scipy.ndimage — no skimage dependency."""
+    C1 = (0.01 * data_range) ** 2
+    C2 = (0.03 * data_range) ** 2
+    xf, yf = x.astype(float), y.astype(float)
+    ux  = uniform_filter(xf,      win_size)
+    uy  = uniform_filter(yf,      win_size)
+    uxx = uniform_filter(xf * xf, win_size)
+    uyy = uniform_filter(yf * yf, win_size)
+    uxy = uniform_filter(xf * yf, win_size)
+    vx  = uxx - ux * ux
+    vy  = uyy - uy * uy
+    vxy = uxy - ux * uy
+    num = (2 * ux * uy + C1) * (2 * vxy + C2)
+    den = (ux ** 2 + uy ** 2 + C1) * (vx + vy + C2)
+    return float(np.mean(num / (den + 1e-10)))
 
 
 # ---------------------------------------------------------------------------
@@ -223,7 +243,7 @@ def spectrogram_ssim(
     s_o = S_o[:rows, :cols]
     s_r = S_r[:rows, :cols]
     dr = float(s_o.max() - s_o.min()) + 1e-8
-    return float(ssim_fn(s_o, s_r, data_range=dr))
+    return _structural_similarity(s_o, s_r, data_range=dr)
 
 
 # ---------------------------------------------------------------------------

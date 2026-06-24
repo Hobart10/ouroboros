@@ -20,11 +20,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.colors import Normalize
-from matplotlib.cm import ScalarMappable
+from PIL import Image
 from typing import Optional, List
 from tqdm import tqdm
 
 from visualization.recon_metrics import make_highres_spec
+
+
+def _resize_2d(arr: np.ndarray, height: int, width: int) -> np.ndarray:
+    """Resize a 2-D float array to (height, width) using PIL — no skimage."""
+    arr_u8 = ((arr - arr.min()) / (arr.ptp() + 1e-8) * 255).astype(np.uint8)
+    img    = Image.fromarray(arr_u8).resize((width, height), Image.BILINEAR)
+    return np.array(img) / 255.0
 
 
 # ---------------------------------------------------------------------------
@@ -351,7 +358,6 @@ def export_for_matlab(
         Use larger values (e.g. 256×512) for higher-quality MATLAB display.
     """
     from scipy.io import savemat
-    from skimage.transform import resize as sk_resize
 
     spec_kw = dict(n_fft=n_fft, hop_ms=hop_ms, win_ms=win_ms,
                    fmin=fmin, fmax=fmax, preemph=0.97)
@@ -363,9 +369,7 @@ def export_for_matlab(
     for i, aud in enumerate(tqdm(audio_list)):
         try:
             S_db, _, _ = make_highres_spec(aud.ravel(), sr, **spec_kw)
-            # normalize to [0,1] then resize to fixed thumbnail
-            S_n  = (S_db - S_db.min()) / (S_db.ptp() + 1e-8)
-            S_rs = sk_resize(S_n, (spec_height, spec_width), anti_aliasing=True)
+            S_rs = _resize_2d(S_db, spec_height, spec_width)
             spectrograms[:, :, i] = (S_rs * 255).astype(np.uint8)
         except Exception:
             pass

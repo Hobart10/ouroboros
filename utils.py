@@ -84,8 +84,11 @@ def euler_step_k(y,dy,d2y,dt,k=1):
     assert np.all(dy_out.shape == dyhat_out.shape),print(dy_out.shape,dyhat_out.shape)
     return (y_out,yhat_out),(dy_out,dyhat_out)
 
-def from_numpy(data,device='cuda'):
+_DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+def from_numpy(data, device=None):
+    if device is None:
+        device = _DEFAULT_DEVICE
     return torch.from_numpy(data).to(torch.FloatTensor).to(device)
 
 def remove_axes(axis):

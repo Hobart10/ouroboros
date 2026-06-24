@@ -18,8 +18,6 @@ from typing import Optional
 
 from utils import deriv_approx_dy, get_spec
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-
 
 # ---------------------------------------------------------------------------
 # 1.  Latent extraction
@@ -58,6 +56,9 @@ def extract_ouroboros_embeddings(
     dt = 1.0 / sr
     model.eval()
 
+    # use whatever device the model lives on — handles single-GPU, multi-GPU, CPU
+    model_device = next(model.parameters()).device
+
     omegas, gammas, weights_list, durations = [], [], [], []
     skipped = 0
 
@@ -70,8 +71,8 @@ def extract_ouroboros_embeddings(
 
         dy = deriv_approx_dy(aud)
 
-        x_t  = torch.from_numpy(aud).to(torch.float32).to(DEVICE)
-        dy_t = torch.from_numpy(dy).to(torch.float32).to(DEVICE)
+        x_t  = torch.from_numpy(aud).to(torch.float32).to(model_device)
+        dy_t = torch.from_numpy(dy).to(torch.float32).to(model_device)
 
         try:
             with torch.no_grad():
@@ -266,138 +267,3 @@ def plot_umap(
 
     return fig
 
-
-# ---------------------------------------------------------------------------
-# 5.  Reconstruction metrics (per call)
-# ---------------------------------------------------------------------------
-
-def reconstruction_metrics(
-    original: np.ndarray,
-    reconstructed: np.ndarray,
-    sr: int,
-    win_len: int = 128,
-) -> dict:
-    """
-    Compute waveform and spectrogram similarity between original and
-    reconstructed audio for a single call.
-
-    Parameters
-    ----------
-    original      : 1-D waveform array
-    reconstructed : 1-D waveform array (same length)
-    sr            : sample rate
-    win_len       : STFT window length for spectrogram comparison
-
-    Returns
-    -------
-    dict with keys: r2_waveform, snr_db, ssim_spec, mse_spec
-    """
-    from scipy.stats import pearsonr
-    from skimage.metrics import structural_similarity as ssim
-
-    # align lengths
-    min_len = min(len(original), len(reconstructed))
-    orig = original[:min_len]
-    recon = reconstructed[:min_len]
-
-    # waveform R²
-    ss_res = np.sum((orig - recon) ** 2)
-    ss_tot = np.sum((orig - orig.mean()) ** 2)
-    r2 = float(1 - ss_res / (ss_tot + 1e-12))
-
-    # SNR
-    signal_power = np.mean(orig ** 2)
-    noise_power  = np.mean((orig - recon) ** 2)
-    snr_db = float(10 * np.log10(signal_power / (noise_power + 1e-12)))
-
-    # spectrogram comparison
-    duration = min_len / sr
-    s_orig, *_ = get_spec(
-        orig, sr, onset=0.0, offset=duration,
-        shoulder=0.0, win_len=win_len, interp=False, normalize=True,
-    )
-    s_recon, *_ = get_spec(
-        recon, sr, onset=0.0, offset=duration,
-        shoulder=0.0, win_len=win_len, interp=False, normalize=True,
-    )
-
-    # match shapes for SSIM
-    min_rows = min(s_orig.shape[0], s_recon.shape[0])
-    min_cols = min(s_orig.shape[1], s_recon.shape[1])
-    s_orig  = s_orig[:min_rows, :min_cols]
-    s_recon = s_recon[:min_rows, :min_cols]
-
-    data_range = float(s_orig.max() - s_orig.min()) + 1e-8
-    ssim_val = float(ssim(s_orig, s_recon, data_range=data_range))
-    mse_spec = float(np.mean((s_orig - s_recon) ** 2))
-
-    return {
-        "r2_waveform": r2,
-        "snr_db":      snr_db,
-        "ssim_spec":   ssim_val,
-        "mse_spec":    mse_spec,
-    }
-
-
-def batch_reconstruction_metrics(
-    originals: list,
-    reconstructions: list,
-    sr: int,
-) -> dict:
-    """
-    Run reconstruction_metrics() over a list of call pairs and
-    return arrays of per-call metric values.
-    """
-    keys = ["r2_waveform", "snr_db", "ssim_spec", "mse_spec"]
-    results = {k: [] for k in keys}
-
-    for orig, recon in tqdm(zip(originals, reconstructions), total=len(originals),
-                             desc="Computing metrics"):
-        m = reconstruction_metrics(orig.ravel(), recon.ravel(), sr)
-        for k in keys:
-            results[k].append(m[k])
-
-    return {k: np.array(v) for k, v in results.items()}
-
-
-def report_metrics(metrics: dict, group_labels: Optional[np.ndarray] = None) -> None:
-    """
-    Print median ± IQR for each metric, optionally broken down by group.
-    Also runs a Wilcoxon signed-rank test between groups (if 2 groups provided).
-    """
-    from scipy.stats import wilcoxon, kruskal
-
-    keys = list(metrics.keys())
-
-    if group_labels is None:
-        print(f"{'Metric':<18} {'Median':>8}  {'IQR (25–75)':>18}")
-        print("-" * 48)
-        for k in keys:
-            v = metrics[k]
-            p25, p50, p75 = np.percentile(v, [25, 50, 75])
-            print(f"{k:<18} {p50:>8.4f}  [{p25:.4f}, {p75:.4f}]")
-    else:
-        unique_groups = np.unique(group_labels)
-        header = f"{'Metric':<18}" + "".join(f"  Group {g} (med)" for g in unique_groups)
-        print(header)
-        print("-" * (18 + 18 * len(unique_groups)))
-        for k in keys:
-            v = metrics[k]
-            row = f"{k:<18}"
-            group_vals = []
-            for g in unique_groups:
-                mask = group_labels == g
-                p50 = np.median(v[mask])
-                row += f"  {p50:>10.4f}    "
-                group_vals.append(v[mask])
-            print(row)
-
-            # statistical test
-            if len(unique_groups) == 2:
-                # paired Wilcoxon if same N, else unpaired Kruskal
-                try:
-                    stat, p = wilcoxon(group_vals[0], group_vals[1])
-                    print(f"  {'':18} Wilcoxon p = {p:.4g}")
-                except ValueError:
-                    stat, p = kruskal(*group_vals)
-                    print(f"  {'':18} Kruskal-Wallis p = {p:.4g}")

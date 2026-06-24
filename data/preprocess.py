@@ -8,7 +8,11 @@ import soundfile as sf
 import os
 import glob
 from utils import butter_filter
-import noisereduce as nr
+try:
+    import noisereduce as nr
+    _HAS_NOISEREDUCE = True
+except ImportError:
+    _HAS_NOISEREDUCE = False
 
 from typing import Union, Tuple
 
@@ -506,6 +510,8 @@ def tune_preprocessing(
             vmax = (vmax - vmin) / 10 + vmin
 
             if reduce_noise:
+                if not _HAS_NOISEREDUCE:
+                    raise ImportError("reduce_noise=True requires noisereduce: pip install noisereduce")
                 noise_reduced_chunk_on = max(0, on_ind - sr)
                 on_diff = on_ind - noise_reduced_chunk_on
                 noise_reduced_chunk_off = min(len(a), off_ind + sr)
@@ -647,6 +653,8 @@ def preprocess_helper(
 
     orig_dtype = orig_audio.dtype
     if reduce_noise:
+        if not _HAS_NOISEREDUCE:
+            raise ImportError("reduce_noise=True requires noisereduce: pip install noisereduce")
         nyquist = sr // 2
         freq_mask_smooth_hz = int(
             round(2.5 * nyquist / 100)

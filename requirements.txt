@@ -1,0 +1,34 @@
+# Core deep learning
+# Install PyTorch with CUDA separately — see https://pytorch.org/get-started/locally/
+# e.g.: pip install torch>=2.0.0 --index-url https://download.pytorch.org/whl/cu118
+torch>=2.0.0
+
+# Ouroboros model dependencies
+mambapy>=1.2.0
+torchdiffeq>=0.2.5
+ssqueezepy>=0.6.0
+
+# Audio & signal processing
+librosa>=0.10.0
+scipy>=1.10.0
+numpy>=1.24.0
+
+# Machine learning utilities
+scikit-learn>=1.2.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.13.0
+Pillow>=9.0.0
+
+# General utilities
+tqdm>=4.65.0
+pandas>=2.0.0
+
+# Optional: UMAP (dimensionality reduction)
+# pip install umap-learn
+# umap-learn>=0.5.0
+
+# Optional: noise reduction for preprocessing
+# pip install noisereduce
+# noisereduce>=2.0.0

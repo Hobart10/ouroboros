@@ -212,7 +212,7 @@ def integrate_second_deriv(
 
         return torch.hstack([dz1, dz2])
 
-    eval_times = torch.from_numpy(eval_times)
+    eval_times = torch.from_numpy(eval_times).to(ic.device)
 
     with torch.no_grad():
         yhat = odeint_adjoint(
