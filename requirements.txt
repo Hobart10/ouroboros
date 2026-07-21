@@ -1,34 +1,31 @@
-# Core deep learning
-# Install PyTorch with CUDA separately — see https://pytorch.org/get-started/locally/
-# e.g.: pip install torch>=2.0.0 --index-url https://download.pytorch.org/whl/cu118
-torch>=2.0.0
+# This file is a pip fallback only.
+# Preferred: use uv (see README or cluster setup below).
+#
+#   uv sync                        # core deps
+#   uv sync --extra umap           # + umap-learn
+#   uv sync --extra denoise        # + noisereduce
+#   uv sync --extra all            # everything
+#
+# pip fallback (if uv is not available):
+#   pip install torch --index-url https://download.pytorch.org/whl/cu126
+#   pip install -r requirements.txt
 
-# Ouroboros model dependencies
-mambapy>=1.2.0
-torchdiffeq>=0.2.5
-ssqueezepy>=0.6.0
-
-# Audio & signal processing
 librosa>=0.10.0
-scipy>=1.10.0
-numpy>=1.24.0
-
-# Machine learning utilities
-scikit-learn>=1.2.0
-
-# Visualization
+mambapy>=1.2.0
 matplotlib>=3.7.0
-seaborn>=0.13.0
-Pillow>=9.0.0
-
-# General utilities
-tqdm>=4.65.0
+numpy>=1.24.0
 pandas>=2.0.0
+Pillow>=9.0.0
+scikit-learn>=1.2.0
+scipy>=1.10.0
+seaborn>=0.13.0
+soundfile>=0.12.0
+ssqueezepy>=0.6.0
+tensorboard>=2.12.0
+torchdiffeq>=0.2.5
+tqdm>=4.65.0
+vocalpy>=0.10.0.post1
 
-# Optional: UMAP (dimensionality reduction)
-# pip install umap-learn
+# Optional extras:
 # umap-learn>=0.5.0
-
-# Optional: noise reduction for preprocessing
-# pip install noisereduce
 # noisereduce>=2.0.0
