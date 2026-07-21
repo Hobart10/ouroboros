@@ -24,7 +24,6 @@ ssqueezepy>=0.6.0
 tensorboard>=2.12.0
 torchdiffeq>=0.2.5
 tqdm>=4.65.0
-vocalpy>=0.10.0.post1
 
 # Optional extras:
 # umap-learn>=0.5.0

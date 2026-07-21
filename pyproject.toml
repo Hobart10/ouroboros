@@ -23,7 +23,6 @@ dependencies = [
     "torch==2.5.1+cu121; sys_platform == 'linux'",
     "torchdiffeq>=0.2.5",
     "tqdm>=4.65.0",
-    "vocalpy>=0.10.0.post1",
 ]
 
 [project.optional-dependencies]
